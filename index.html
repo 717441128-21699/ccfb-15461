@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自动播出系统 · Auto Broadcast</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">📻</span>
+      <div>
+        <h1>县广播电台 · 自动播出系统</h1>
+        <p>Web Audio 无人值守播出 · 节拍对齐叠接 · 整点硬锚定</p>
+      </div>
+    </div>
+    <div class="clockbox">
+      <div><label>标准时间</label><strong id="std-clock">--:--:--</strong></div>
+      <div><label>虚拟播出时钟</label><strong id="air-clock">--:--:--</strong></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="library">① 曲库分析</button>
+    <button class="tab" data-tab="schedule">② 播出单编排</button>
+    <button class="tab" data-tab="monitor">③ 播出监视</button>
+    <button class="tab" data-tab="logs">④ 播出日志</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="panel-library">
+      <div class="toolbar">
+        <button class="btn primary" id="btn-gen-demo">生成演示曲库（36 条 · 五种风格）</button>
+        <button class="btn" id="btn-gen-bulk">压测：生成并分析 10,000 条</button>
+        <button class="btn" id="btn-reanalyze">对现有曲库重新分析</button>
+        <button class="btn" id="btn-selftest">DSP 分析准确率自测</button>
+        <button class="btn danger" id="btn-reset">清空曲库</button>
+        <span class="hint" id="lib-summary">尚未载入曲库</span>
+      </div>
+      <div id="selftest-out"></div>
+      <div class="progress-wrap" hidden id="progress-wrap">
+        <div class="progress"><div id="progress-bar"></div></div>
+        <div class="progress-meta" id="progress-meta"></div>
+      </div>
+      <div class="stats" id="lib-stats"></div>
+      <div class="table-wrap">
+        <table id="lib-table">
+          <thead>
+            <tr>
+              <th>#</th><th>标题</th><th>类型</th><th>风格</th><th>时长</th>
+              <th>BPM</th><th>人声进入</th><th>淡出起点</th><th>前奏/尾段</th>
+              <th>人声误差</th><th>淡出误差</th><th>BPM 误差</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-schedule">
+      <div class="toolbar">
+        <label>宏小时长度
+          <select id="hour-length">
+            <option value="20">20 秒（极速验收）</option>
+            <option value="60">60 秒（快演）</option>
+            <option value="300" selected>300 秒（5 分钟）</option>
+            <option value="900">15 分钟</option>
+            <option value="3600">60 分钟（真实整点）</option>
+          </select>
+        </label>
+        <label>每 N 首插广告 <input id="ad-every" type="number" min="1" max="20" value="4" style="width:64px" /></label>
+        <button class="btn primary" id="btn-build">倒排编排一个整点</button>
+        <span class="hint" id="sch-hint">先在「曲库分析」生成素材</span>
+      </div>
+      <div id="sch-summary" class="stats"></div>
+      <div class="timeline" id="timeline"></div>
+      <div class="table-wrap">
+        <table id="sch-table">
+          <thead>
+            <tr>
+              <th>#</th><th>类型</th><th>标题</th><th>开始（相对整点）</th><th>结束</th>
+              <th>叠入(s)</th><th>叠出(s)</th><th>淡出调整(s)</th><th>循环</th><th>备注</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-monitor">
+      <div class="toolbar">
+        <button class="btn primary" id="btn-play">▶ 按当前播出单开播</button>
+        <button class="btn" id="btn-stop">■ 停止</button>
+        <button class="btn warn" id="btn-interrupt">⚡ 临时插播新闻并重排</button>
+        <span class="hint" id="mon-hint"></span>
+      </div>
+      <div class="monitor-grid">
+        <div class="card">
+          <h3>正在播出</h3>
+          <p class="big" id="mon-current">—</p>
+          <p>下一条：<span id="mon-next">—</span></p>
+          <div class="meter"><div id="meter-bar"></div></div>
+        </div>
+        <div class="card">
+          <h3>整点锚定</h3>
+          <p>距报时第一声：<strong id="mon-pips-in">--</strong></p>
+          <p>计划偏差：<strong id="mon-planned">0 ms</strong></p>
+          <p>实测发声偏差：<strong id="mon-measured">--</strong></p>
+          <p class="hint" id="mon-pips-note">要求 ≤ 100 ms</p>
+        </div>
+        <div class="card">
+          <h3>安全核验</h3>
+          <p>人声碰撞：<strong id="mon-collision">未编排</strong></p>
+          <p>调度欠载：<strong id="mon-underrun">0 次</strong></p>
+          <p>播出条目：<strong id="mon-count">0</strong></p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="mon-table">
+          <thead><tr><th>状态</th><th>类型</th><th>标题</th><th>开始</th><th>结束</th><th>叠接</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-logs">
+      <div class="toolbar">
+        <select id="log-level">
+          <option value="">全部级别</option>
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="error">error</option>
+          <option value="timing">timing</option>
+        </select>
+        <button class="btn" id="btn-export-csv">导出 CSV</button>
+        <button class="btn danger" id="btn-clear-log">清空日志</button>
+        <span class="hint" id="log-count"></span>
+      </div>
+      <div class="table-wrap log-wrap">
+        <table id="log-table">
+          <thead><tr><th>墙钟</th><th>虚拟时钟</th><th>级别</th><th>类别</th><th>内容</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

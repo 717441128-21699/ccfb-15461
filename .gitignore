@@ -16,3 +16,7 @@ node_modules/
 __pycache__/
 .venv/
 venv/
+dist/
+*.report.json
+*-out.txt
+*-result.json
