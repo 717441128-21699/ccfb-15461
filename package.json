@@ -1,0 +1,21 @@
+{
+  "name": "county-radio-auto-broadcast",
+  "version": "1.0.0",
+  "private": true,
+  "description": "县广播电台网页版自动播出系统：曲库分析、倒排单、Web Audio 播出监视与日志",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit",
+    "verify": "tsx scripts/verify.ts",
+    "benchmark": "tsx scripts/benchmark.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}
